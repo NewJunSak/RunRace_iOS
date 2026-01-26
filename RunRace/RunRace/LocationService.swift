@@ -10,7 +10,11 @@ import CoreLocation
 import Combine
 
 protocol LocationServable {
+    /// 위,경도 Publisher
     var locationPublisher: AnyPublisher<Location, Never> { get }
+    /// 현재 이동 거리 Publisher
+    var distancePublisher: AnyPublisher<Double, Never> { get }
+    
     func startUpdateLocation()
     func stopUpdateLocation()
     func updateDistancefilter(_ distance: RunDistance)
@@ -50,6 +54,8 @@ extension LocationService: LocationServable {
     
     func stopUpdateLocation() {
         locationManager.stopUpdatingLocation()
+        locationSubject.send(nil)
+        distanceSubject.send(0.0)
     }
     /// 외부에서 사용자가 달릴 거리에 따른 DistanceFilter
     func updateDistancefilter(_ distance: RunDistance) {
@@ -59,8 +65,13 @@ extension LocationService: LocationServable {
 
 extension LocationService: CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        guard let clLocation = locations.last else { return }
-        let location = Location(latitude: clLocation.coordinate.latitude, longitude: clLocation.coordinate.longitude)
-        locationSubject.send(location)
+        guard let currentLocation = locations.last else { return }
+        if let prevLoacation = locationSubject.value {
+            let distance = currentLocation.distance(from: prevLoacation)
+            // 마지막 좌표에서 이동한 거리 + 기존 이동한 거리
+            distanceSubject.send(distance + distanceSubject.value)
+        }
+        
+        locationSubject.send(currentLocation)
     }
 }
