@@ -17,8 +17,9 @@ protocol LocationServable {
 }
 
 final class LocationService: NSObject {
-    private let locationSubject = PassthroughSubject<Location, Never>()
     private let locationManager = CLLocationManager()
+    private let locationSubject = CurrentValueSubject<CLLocation?, Never>(nil)
+    private let distanceSubject = CurrentValueSubject<Double, Never>(0.0)
     
     override init() {
         super.init()
@@ -31,7 +32,16 @@ final class LocationService: NSObject {
 
 extension LocationService: LocationServable {
     var locationPublisher: AnyPublisher<Location, Never> {
-        locationSubject.eraseToAnyPublisher()
+        locationSubject
+            .compactMap { $0?.coordinate }
+            .map {
+                Location(latitude: $0.latitude, longitude: $0.longitude)
+            }
+            .eraseToAnyPublisher()
+    }
+    
+    var distancePublisher: AnyPublisher<Double, Never> {
+        distanceSubject.eraseToAnyPublisher()
     }
     
     func startUpdateLocation() {
