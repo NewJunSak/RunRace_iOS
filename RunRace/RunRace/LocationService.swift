@@ -9,13 +9,16 @@ import Foundation
 import CoreLocation
 import Combine
 
+protocol LocationServable {
+    var locationPublisher: AnyPublisher<Location, Never> { get }
+    func startUpdateLocation()
+    func stopUpdateLocation()
+    func updateDistancefilter(_ distance: RunDistance)
+}
+
 final class LocationService: NSObject {
     private let locationSubject = PassthroughSubject<Location, Never>()
     private let locationManager = CLLocationManager()
-    
-    var locationPublisher: AnyPublisher<Location, Never> {
-        locationSubject.eraseToAnyPublisher()
-    }
     
     override init() {
         super.init()
@@ -24,6 +27,12 @@ final class LocationService: NSObject {
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
         locationManager.distanceFilter = 1.0
     }
+}
+
+extension LocationService: LocationServable {
+    var locationPublisher: AnyPublisher<Location, Never> {
+        locationSubject.eraseToAnyPublisher()
+    }
     
     func startUpdateLocation() {
         locationManager.startUpdatingLocation()
@@ -31,6 +40,10 @@ final class LocationService: NSObject {
     
     func stopUpdateLocation() {
         locationManager.stopUpdatingLocation()
+    }
+    /// 외부에서 사용자가 달릴 거리에 따른 DistanceFilter
+    func updateDistancefilter(_ distance: RunDistance) {
+        locationManager.distanceFilter = distance.distanceFilter
     }
 }
 
