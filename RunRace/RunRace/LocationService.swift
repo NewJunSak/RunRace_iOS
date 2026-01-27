@@ -12,8 +12,6 @@ import Combine
 protocol LocationServable {
     /// 위,경도 Publisher
     var locationPublisher: AnyPublisher<Location, Never> { get }
-    /// 현재 이동 거리 Publisher
-    var distancePublisher: AnyPublisher<Double, Never> { get }
     
     func startUpdateLocation()
     func stopUpdateLocation()
@@ -22,8 +20,7 @@ protocol LocationServable {
 
 final class LocationService: NSObject {
     private let locationManager = CLLocationManager()
-    private let locationSubject = CurrentValueSubject<CLLocation?, Never>(nil)
-    private let distanceSubject = CurrentValueSubject<Double, Never>(0.0)
+    private let locationSubject = PassthroughSubject<CLLocation, Never>()
     
     override init() {
         super.init()
@@ -37,15 +34,10 @@ final class LocationService: NSObject {
 extension LocationService: LocationServable {
     var locationPublisher: AnyPublisher<Location, Never> {
         locationSubject
-            .compactMap { $0?.coordinate }
             .map {
-                Location(latitude: $0.latitude, longitude: $0.longitude)
+                Location(latitude: $0.coordinate.latitude, longitude: $0.coordinate.longitude)
             }
             .eraseToAnyPublisher()
-    }
-    
-    var distancePublisher: AnyPublisher<Double, Never> {
-        distanceSubject.eraseToAnyPublisher()
     }
     
     func startUpdateLocation() {
@@ -54,8 +46,6 @@ extension LocationService: LocationServable {
     
     func stopUpdateLocation() {
         locationManager.stopUpdatingLocation()
-        locationSubject.send(nil)
-        distanceSubject.send(0.0)
     }
     /// 외부에서 사용자가 달릴 거리에 따른 DistanceFilter
     func updateDistancefilter(_ distance: RunDistance) {
@@ -66,12 +56,6 @@ extension LocationService: LocationServable {
 extension LocationService: CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let currentLocation = locations.last else { return }
-        if let prevLoacation = locationSubject.value {
-            let distance = currentLocation.distance(from: prevLoacation)
-            // 마지막 좌표에서 이동한 거리 + 기존 이동한 거리
-            distanceSubject.send(distance + distanceSubject.value)
-        }
-        
         locationSubject.send(currentLocation)
     }
 }
