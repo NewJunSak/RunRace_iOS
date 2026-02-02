@@ -27,6 +27,7 @@ final class LocationService: NSObject {
         locationManager.delegate = self
         locationManager.requestAlwaysAuthorization()
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        locationManager.activityType = .fitness
         locationManager.distanceFilter = 1.0
     }
 }
