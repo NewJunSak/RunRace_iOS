@@ -66,6 +66,17 @@ extension LocationService: LocationServable {
 
 extension LocationService: CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        switch locationManager.authorizationStatus {
+        case .authorizedWhenInUse, .authorizedAlways:
+            break
+        case .denied, .restricted:
+            locationSubject.send(completion: .failure(LocationError.notAuthorized))
+            return
+        case .notDetermined:
+            locationManager.requestAlwaysAuthorization()
+        @unknown default:
+            break
+        }
         guard let currentLocation = locations.last else { return }
         locationSubject.send(currentLocation)
     }
@@ -74,6 +85,7 @@ extension LocationService: CLLocationManagerDelegate {
 extension LocationService {
     enum LocationError: Error {
         case notSetGameMode
+        case notAuthorized
     }
 }
 
