@@ -63,6 +63,7 @@ actor Runner {
         case .running(location: let location):
             updateDistance(from: location)
         case .finished(location: let location, time: let time):
+            finishTime = time
             updateDistance(from: location)
         default:
             return
