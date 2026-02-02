@@ -1,11 +1,11 @@
 //
-//  RunDistance.swift
+//  GameMode.swift
 //  RunRace
 //
 //  Created by BOMBSGIE on 1/26/26.
 //
 
-enum RunDistance {
+enum GameMode {
     case m100
     case m300
     case m500

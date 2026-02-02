@@ -15,7 +15,7 @@ protocol LocationServable {
     
     func startUpdateLocation()
     func stopUpdateLocation()
-    func updateDistancefilter(_ distance: RunDistance)
+    func updateDistancefilter(_ distance: GameMode)
 }
 
 final class LocationService: NSObject {
@@ -49,7 +49,7 @@ extension LocationService: LocationServable {
         locationManager.stopUpdatingLocation()
     }
     /// 외부에서 사용자가 달릴 거리에 따른 DistanceFilter
-    func updateDistancefilter(_ distance: RunDistance) {
+    func updateDistancefilter(_ distance: GameMode) {
         locationManager.distanceFilter = distance.distanceFilter
     }
 }
