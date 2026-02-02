@@ -14,9 +14,9 @@ struct Location {
 }
 
 extension Location {
-    func distance(from other: Location) -> Double {
+    nonisolated func distance(from other: Location) -> Double {
         let selfLocation = CLLocation(latitude: latitude, longitude: longitude)
-        let otherLocation = CLLocation(latitude: latitude, longitude: longitude)
+        let otherLocation = CLLocation(latitude: other.latitude, longitude: other.latitude)
         let distance = selfLocation.distance(from: otherLocation)
         return distance
     }
