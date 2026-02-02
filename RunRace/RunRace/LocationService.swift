@@ -11,29 +11,32 @@ import Combine
 
 protocol LocationServable {
     /// 위,경도 Publisher
-    var locationPublisher: AnyPublisher<Location, Never> { get }
+    var locationPublisher: AnyPublisher<Location, Error> { get }
     
     func startUpdateLocation()
     func stopUpdateLocation()
-    func updateDistancefilter(_ distance: GameMode)
+    func setGameMode(_ mode: GameMode)
 }
 
 final class LocationService: NSObject {
     private let locationManager = CLLocationManager()
-    private let locationSubject = PassthroughSubject<CLLocation, Never>()
+    private let locationSubject = PassthroughSubject<CLLocation, Error>()
+    private var gameMode: GameMode?
     
     override init() {
         super.init()
         locationManager.delegate = self
         locationManager.requestAlwaysAuthorization()
-        locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.activityType = .fitness
-        locationManager.distanceFilter = 1.0
+    }
+    
+    private func setTrackingPrecision(_ mode: GameMode) {
+        locationManager.desiredAccuracy = mode.locationAccuracy
+        locationManager.distanceFilter = mode.distanceFilter
     }
 }
 
 extension LocationService: LocationServable {
-    var locationPublisher: AnyPublisher<Location, Never> {
+    var locationPublisher: AnyPublisher<Location, Error> {
         locationSubject
             .map {
                 Location(latitude: $0.coordinate.latitude, longitude: $0.coordinate.longitude)
@@ -42,15 +45,22 @@ extension LocationService: LocationServable {
     }
     
     func startUpdateLocation() {
+        guard let gameMode = gameMode
+        else {
+            locationSubject.send(completion: .failure(LocationError.notSetGameMode))
+            return
+        }
+        setTrackingPrecision(gameMode)
         locationManager.startUpdatingLocation()
     }
     
     func stopUpdateLocation() {
         locationManager.stopUpdatingLocation()
+        gameMode = nil
     }
-    /// 외부에서 사용자가 달릴 거리에 따른 DistanceFilter
-    func updateDistancefilter(_ distance: GameMode) {
-        locationManager.distanceFilter = distance.distanceFilter
+    /// 외부에서 사용자가 달릴 거리 설정
+    func setGameMode(_ mode: GameMode) {
+        gameMode = mode
     }
 }
 
