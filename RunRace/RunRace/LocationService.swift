@@ -11,7 +11,8 @@ import Combine
 
 protocol LocationServable {
     /// 위,경도 Publisher
-    var locationPublisher: AnyPublisher<Location, Error> { get }
+    var locationPublisher: AnyPublisher<Location, Never> { get }
+    var locationErrorPublisher: AnyPublisher<AppErrorProtocol, Never> { get }
     
     func startUpdateLocation()
     func stopUpdateLocation()
@@ -20,7 +21,8 @@ protocol LocationServable {
 
 final class LocationService: NSObject {
     private let locationManager = CLLocationManager()
-    private let locationSubject = PassthroughSubject<CLLocation, Error>()
+    private let locationSubject = PassthroughSubject<CLLocation, Never>()
+    private let locationErrorSubject = PassthroughSubject<AppErrorProtocol, Never>()
     private var gameMode: GameMode?
     
     override init() {
@@ -36,7 +38,7 @@ final class LocationService: NSObject {
 }
 
 extension LocationService: LocationServable {
-    var locationPublisher: AnyPublisher<Location, Error> {
+    var locationPublisher: AnyPublisher<Location, Never> {
         locationSubject
             .map {
                 Location(latitude: $0.coordinate.latitude, longitude: $0.coordinate.longitude)
@@ -44,10 +46,15 @@ extension LocationService: LocationServable {
             .eraseToAnyPublisher()
     }
     
+    var locationErrorPublisher: AnyPublisher<AppErrorProtocol, Never> {
+        locationErrorSubject
+            .eraseToAnyPublisher()
+    }
+    
     func startUpdateLocation() {
         guard let gameMode = gameMode
         else {
-            locationSubject.send(completion: .failure(LocationError.notSetGameMode))
+            locationErrorSubject.send(LocationError.notSetGameMode)
             return
         }
         setTrackingPrecision(gameMode)
@@ -75,17 +82,37 @@ extension LocationService: CLLocationManagerDelegate {
         case .authorizedWhenInUse, .authorizedAlways, .notDetermined:
             break
         case .denied, .restricted:
-            locationSubject.send(completion: .failure(LocationError.notAuthorized))
+            locationErrorSubject.send(LocationError.notAuthorized)
         @unknown default:
             break
         }
     }
 }
 
+// MARK: - Error
+
 extension LocationService {
-    enum LocationError: Error {
-        case notSetGameMode
+    enum LocationError: AppErrorProtocol {
         case notAuthorized
+        case notSetGameMode
+        
+        var message: String {
+            switch self {
+            case .notAuthorized:
+                return "위치 권한이 허용되어 있지 않습니다. 설정에서 위치 권한을 허용해주세요."
+            case .notSetGameMode:
+                return "달릴 거리가 지정되지 않았습니다."
+            }
+        }
+        
+        var action: ErrorAction {
+            switch self {
+            case .notAuthorized:
+                return .alert
+            case .notSetGameMode:
+                return .none
+            }
+        }
     }
 }
 
