@@ -7,7 +7,7 @@
 
 import Foundation
 
-actor Runner {
+final class Runner {
     let id: String
     let nickname: String
     var timeLapsed: TimeInterval {
@@ -46,7 +46,7 @@ actor Runner {
         self.locations = locations
     }
     
-    init(id: String, nickname: String) {
+    convenience init(id: String, nickname: String) {
         self.init(
             id: id, nickname: nickname,
             distance: 0, status: .countDown,
