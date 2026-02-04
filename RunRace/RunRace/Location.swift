@@ -13,11 +13,11 @@ struct Location {
     let longitude: Double
 }
 
-//TODO: UseCase 구현 시, 해당 파일의 fileprivate으로 변경
 extension Location {
-    func convertToDistance(_ prevLocation: Location) -> Double {
-        let current = CLLocation(latitude: latitude, longitude: longitude)
-        let prev = CLLocation(latitude: prevLocation.latitude, longitude: prevLocation.longitude)
-        return current.distance(from: prev)
+    func distance(from other: Location) -> Double {
+        let selfLocation = CLLocation(latitude: latitude, longitude: longitude)
+        let otherLocation = CLLocation(latitude: other.latitude, longitude: other.latitude)
+        let distance = selfLocation.distance(from: otherLocation)
+        return distance
     }
 }
