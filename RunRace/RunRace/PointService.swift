@@ -1,5 +1,5 @@
 //
-//  LocationService.swift
+//  PointService.swift
 //  RunRace
 //
 //  Created by BOMBSGIE on 1/26/26.
@@ -16,14 +16,14 @@ protocol PointServable {
     
     func startUpdatingPoint()
     func stopUpdatingPoint()
-    func setGameMode(_ mode: GameMode)
+    func setRunningDistance(_ mode: RunningDistance)
 }
 
 final class PointService: NSObject {
     private let locationManager = CLLocationManager()
     private let locationSubject = PassthroughSubject<CLLocation, Never>()
     private let errorSubject = PassthroughSubject<AppErrorProtocol, Never>()
-    private var gameMode: GameMode?
+    private var runningDistance: RunningDistance?
     
     override init() {
         super.init()
@@ -31,7 +31,7 @@ final class PointService: NSObject {
         locationManager.requestAlwaysAuthorization()
     }
     
-    private func setTrackingPrecision(_ mode: GameMode) {
+    private func setTrackingPrecision(_ mode: RunningDistance) {
         locationManager.desiredAccuracy = mode.locationAccuracy
         locationManager.distanceFilter = mode.distanceFilter
     }
@@ -52,22 +52,22 @@ extension PointService: PointServable {
     }
     
     func startUpdatingPoint() {
-        guard let gameMode = gameMode
+        guard let runningDistance = runningDistance
         else {
             errorSubject.send(PointError.notSetGameMode)
             return
         }
-        setTrackingPrecision(gameMode)
+        setTrackingPrecision(runningDistance)
         locationManager.startUpdatingLocation()
     }
     
     func stopUpdatingPoint() {
         locationManager.stopUpdatingLocation()
-        gameMode = nil
+        runningDistance = nil
     }
     /// 외부에서 사용자가 달릴 거리 설정
-    func setGameMode(_ mode: GameMode) {
-        gameMode = mode
+    func setRunningDistance(_ distance: RunningDistance) {
+        runningDistance = distance
     }
 }
 
@@ -118,7 +118,7 @@ extension PointService {
 
 // MARK: - GameMode+
 
-private extension GameMode {
+private extension RunningDistance {
     var distanceFilter: Double {
         switch self {
         case .m100, .m300:
