@@ -9,19 +9,19 @@ import Foundation
 
 enum RunStatus {
     case countDown
-    case started(location: Location, time: Date)
-    case running(location: Location)
-    case finished(location: Location, time: Date)
+    case started(point: Point, time: Date)
+    case running(point: Point)
+    case finished(point: Point, time: Date)
     case giveUp
 }
 
 extension RunStatus {
-    var location: Location? {
+    var point: Point? {
         switch self {
-        case .started(location: let location, time: _),
-                .running(location: let location),
-                .finished(location: let location, time: _):
-            return location
+        case .started(point: let point, time: _),
+                .running(point: let point),
+                .finished(point: let point, time: _):
+            return point
         default:
             return nil
         }

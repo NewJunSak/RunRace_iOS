@@ -9,9 +9,9 @@ import Foundation
 import CoreLocation
 import Combine
 
-protocol LocationServable {
+protocol PointServable {
     /// 위,경도 Publisher
-    var locationPublisher: AnyPublisher<Location, Never> { get }
+    var pointPublisher: AnyPublisher<Point, Never> { get }
     var locationErrorPublisher: AnyPublisher<AppErrorProtocol, Never> { get }
     
     func startUpdateLocation()
@@ -37,11 +37,11 @@ final class LocationService: NSObject {
     }
 }
 
-extension LocationService: LocationServable {
-    var locationPublisher: AnyPublisher<Location, Never> {
+extension LocationService: PointServable {
+    var pointPublisher: AnyPublisher<Point, Never> {
         locationSubject
             .map {
-                Location(latitude: $0.coordinate.latitude, longitude: $0.coordinate.longitude)
+                Point(latitude: $0.coordinate.latitude, longitude: $0.coordinate.longitude)
             }
             .eraseToAnyPublisher()
     }

@@ -26,7 +26,7 @@ final class Runner {
     private(set) var status: RunStatus
     private(set) var startTime: Date?
     private(set) var finishTime: Date?
-    private(set) var locations: [Location]
+    private(set) var points: [Point]
     
     init(
         id: String,
@@ -35,7 +35,7 @@ final class Runner {
         status: RunStatus,
         startTime: Date?,
         finishTime: Date?,
-        locations: [Location]
+        points: [Point]
     ) {
         self.id = id
         self.nickname = nickname
@@ -43,7 +43,7 @@ final class Runner {
         self.status = status
         self.startTime = startTime
         self.finishTime = finishTime
-        self.locations = locations
+        self.points = points
     }
     
     convenience init(id: String, nickname: String) {
@@ -51,32 +51,32 @@ final class Runner {
             id: id, nickname: nickname,
             distance: 0, status: .countDown,
             startTime: nil, finishTime: nil,
-            locations: []
+            points: []
         )
     }
     
     func update(status: RunStatus) {
         switch status {
-        case .started(location: let location, time: let time):
+        case .started(point: let point, time: let time):
             startTime = time
-            updateDistance(from: location)
-        case .running(location: let location):
-            updateDistance(from: location)
-        case .finished(location: let location, time: let time):
+            updateDistance(from: point)
+        case .running(point: let point):
+            updateDistance(from: point)
+        case .finished(point: let point, time: let time):
             finishTime = time
-            updateDistance(from: location)
+            updateDistance(from: point)
         default:
             return
         }
     }
     
-    private func updateDistance(from currentLocation: Location) {
-        guard let lastLocation = locations.last else {
-            locations.append(currentLocation)
+    private func updateDistance(from currentPoint: Point) {
+        guard let lastPoint = points.last else {
+            points.append(currentPoint)
             return
         }
         
-        distance += currentLocation.distance(from: lastLocation)
-        locations.append(currentLocation)
+        distance += currentPoint.distance(from: lastPoint)
+        points.append(currentPoint)
     }
 }
