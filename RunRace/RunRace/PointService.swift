@@ -12,17 +12,17 @@ import Combine
 protocol PointServable {
     /// 위,경도 Publisher
     var pointPublisher: AnyPublisher<Point, Never> { get }
-    var locationErrorPublisher: AnyPublisher<AppErrorProtocol, Never> { get }
+    var errorPublisher: AnyPublisher<AppErrorProtocol, Never> { get }
     
-    func startUpdateLocation()
-    func stopUpdateLocation()
+    func startUpdatingPoint()
+    func stopUpdatingPoint()
     func setGameMode(_ mode: GameMode)
 }
 
-final class LocationService: NSObject {
+final class PointService: NSObject {
     private let locationManager = CLLocationManager()
     private let locationSubject = PassthroughSubject<CLLocation, Never>()
-    private let locationErrorSubject = PassthroughSubject<AppErrorProtocol, Never>()
+    private let errorSubject = PassthroughSubject<AppErrorProtocol, Never>()
     private var gameMode: GameMode?
     
     override init() {
@@ -37,7 +37,7 @@ final class LocationService: NSObject {
     }
 }
 
-extension LocationService: PointServable {
+extension PointService: PointServable {
     var pointPublisher: AnyPublisher<Point, Never> {
         locationSubject
             .map {
@@ -46,22 +46,22 @@ extension LocationService: PointServable {
             .eraseToAnyPublisher()
     }
     
-    var locationErrorPublisher: AnyPublisher<AppErrorProtocol, Never> {
-        locationErrorSubject
+    var errorPublisher: AnyPublisher<AppErrorProtocol, Never> {
+        errorSubject
             .eraseToAnyPublisher()
     }
     
-    func startUpdateLocation() {
+    func startUpdatingPoint() {
         guard let gameMode = gameMode
         else {
-            locationErrorSubject.send(LocationError.notSetGameMode)
+            errorSubject.send(PointError.notSetGameMode)
             return
         }
         setTrackingPrecision(gameMode)
         locationManager.startUpdatingLocation()
     }
     
-    func stopUpdateLocation() {
+    func stopUpdatingPoint() {
         locationManager.stopUpdatingLocation()
         gameMode = nil
     }
@@ -71,7 +71,7 @@ extension LocationService: PointServable {
     }
 }
 
-extension LocationService: CLLocationManagerDelegate {
+extension PointService: CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let currentLocation = locations.last else { return }
         locationSubject.send(currentLocation)
@@ -82,7 +82,7 @@ extension LocationService: CLLocationManagerDelegate {
         case .authorizedWhenInUse, .authorizedAlways, .notDetermined:
             break
         case .denied, .restricted:
-            locationErrorSubject.send(LocationError.notAuthorized)
+            errorSubject.send(PointError.notAuthorized)
         @unknown default:
             break
         }
@@ -91,8 +91,8 @@ extension LocationService: CLLocationManagerDelegate {
 
 // MARK: - Error
 
-extension LocationService {
-    enum LocationError: AppErrorProtocol {
+extension PointService {
+    enum PointError: AppErrorProtocol {
         case notAuthorized
         case notSetGameMode
         
