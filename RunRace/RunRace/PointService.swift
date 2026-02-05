@@ -1,5 +1,5 @@
 //
-//  LocationService.swift
+//  PointService.swift
 //  RunRace
 //
 //  Created by BOMBSGIE on 1/26/26.
@@ -9,21 +9,21 @@ import Foundation
 import CoreLocation
 import Combine
 
-protocol LocationServable {
+protocol PointServable {
     /// 위,경도 Publisher
-    var locationPublisher: AnyPublisher<Location, Never> { get }
-    var locationErrorPublisher: AnyPublisher<AppErrorProtocol, Never> { get }
+    var pointPublisher: AnyPublisher<Point, Never> { get }
+    var errorPublisher: AnyPublisher<AppErrorProtocol, Never> { get }
     
-    func startUpdateLocation()
-    func stopUpdateLocation()
-    func setGameMode(_ mode: GameMode)
+    func startUpdatingPoint()
+    func stopUpdatingPoint()
+    func setRunningDistance(_ mode: RunningDistance)
 }
 
-final class LocationService: NSObject {
+final class PointService: NSObject {
     private let locationManager = CLLocationManager()
     private let locationSubject = PassthroughSubject<CLLocation, Never>()
-    private let locationErrorSubject = PassthroughSubject<AppErrorProtocol, Never>()
-    private var gameMode: GameMode?
+    private let errorSubject = PassthroughSubject<AppErrorProtocol, Never>()
+    private var runningDistance: RunningDistance?
     
     override init() {
         super.init()
@@ -31,47 +31,47 @@ final class LocationService: NSObject {
         locationManager.requestAlwaysAuthorization()
     }
     
-    private func setTrackingPrecision(_ mode: GameMode) {
+    private func setTrackingPrecision(_ mode: RunningDistance) {
         locationManager.desiredAccuracy = mode.locationAccuracy
         locationManager.distanceFilter = mode.distanceFilter
     }
 }
 
-extension LocationService: LocationServable {
-    var locationPublisher: AnyPublisher<Location, Never> {
+extension PointService: PointServable {
+    var pointPublisher: AnyPublisher<Point, Never> {
         locationSubject
             .map {
-                Location(latitude: $0.coordinate.latitude, longitude: $0.coordinate.longitude)
+                Point(latitude: $0.coordinate.latitude, longitude: $0.coordinate.longitude)
             }
             .eraseToAnyPublisher()
     }
     
-    var locationErrorPublisher: AnyPublisher<AppErrorProtocol, Never> {
-        locationErrorSubject
+    var errorPublisher: AnyPublisher<AppErrorProtocol, Never> {
+        errorSubject
             .eraseToAnyPublisher()
     }
     
-    func startUpdateLocation() {
-        guard let gameMode = gameMode
+    func startUpdatingPoint() {
+        guard let runningDistance = runningDistance
         else {
-            locationErrorSubject.send(LocationError.notSetGameMode)
+            errorSubject.send(PointError.notSetGameMode)
             return
         }
-        setTrackingPrecision(gameMode)
+        setTrackingPrecision(runningDistance)
         locationManager.startUpdatingLocation()
     }
     
-    func stopUpdateLocation() {
+    func stopUpdatingPoint() {
         locationManager.stopUpdatingLocation()
-        gameMode = nil
+        runningDistance = nil
     }
     /// 외부에서 사용자가 달릴 거리 설정
-    func setGameMode(_ mode: GameMode) {
-        gameMode = mode
+    func setRunningDistance(_ distance: RunningDistance) {
+        runningDistance = distance
     }
 }
 
-extension LocationService: CLLocationManagerDelegate {
+extension PointService: CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let currentLocation = locations.last else { return }
         locationSubject.send(currentLocation)
@@ -82,7 +82,7 @@ extension LocationService: CLLocationManagerDelegate {
         case .authorizedWhenInUse, .authorizedAlways, .notDetermined:
             break
         case .denied, .restricted:
-            locationErrorSubject.send(LocationError.notAuthorized)
+            errorSubject.send(PointError.notAuthorized)
         @unknown default:
             break
         }
@@ -91,8 +91,8 @@ extension LocationService: CLLocationManagerDelegate {
 
 // MARK: - Error
 
-extension LocationService {
-    enum LocationError: AppErrorProtocol {
+extension PointService {
+    enum PointError: AppErrorProtocol {
         case notAuthorized
         case notSetGameMode
         
@@ -118,7 +118,7 @@ extension LocationService {
 
 // MARK: - GameMode+
 
-private extension GameMode {
+private extension RunningDistance {
     var distanceFilter: Double {
         switch self {
         case .m100, .m300:
