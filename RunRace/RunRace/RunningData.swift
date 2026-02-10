@@ -8,21 +8,21 @@
 import Foundation
 
 struct RunningData: Codable {
-    let userId: String
     let runState: RunState
     let latitude: Double?
     let longitude: Double?
+    let timestamp: Date?
 
     init(
-        userId: String,
         runState: RunState,
         latitude: Double? = nil,
-        longitude: Double? = nil
+        longitude: Double? = nil,
+        timestamp: Date? = nil
     ) {
-        self.userId = userId
         self.runState = runState
         self.latitude = latitude
         self.longitude = longitude
+        self.timestamp = timestamp
     }
     
 }
