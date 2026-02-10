@@ -27,7 +27,7 @@ extension DataTransferService: GKMatchDelegate {
 }
 
 extension DataTransferService {
-    var outputRunStatusPublisher: AnyPublisher<(userID: String, RunStatus), Error> {
+    var outputRunStatusPublisher: AnyPublisher<(userId: String, RunStatus), Error> {
         outputDataSubject
             .tryMap { (userId, data) in
                 let runningData = try JSONDecoder().decode(RunningData.self, from: data)
@@ -43,6 +43,12 @@ extension DataTransferService {
     
     func setMatch(_ match: GKMatch) {
         self.match = match
+    }
+    
+    func sendData(with status: RunStatus) throws {
+        let runningData = toRunningData(from: status)
+        let data = try JSONEncoder().encode(runningData)
+        try match?.sendData(toAllPlayers: data, with: .unreliable)
     }
 }
 
@@ -72,6 +78,21 @@ private extension DataTransferService {
             return .finished(point: point, time: timestamp)
         default:
             return nil
+        }
+    }
+    
+    func toRunningData(from status: RunStatus) -> RunningData {
+        switch status {
+        case .countDown:
+            return RunningData(runState: .countDown)
+        case .started(let point, let time):
+            return RunningData(runState: .started, latitude: point.latitude, longitude: point.longitude, timestamp: time)
+        case .running(let point):
+            return RunningData(runState: .running, latitude: point.latitude, longitude: point.longitude)
+        case .finished(let point, let time):
+            return RunningData(runState: .finished, latitude: point.latitude, longitude: point.longitude, timestamp: time)
+        case .giveUp:
+            return RunningData(runState: .giveUp)
         }
     }
 }
