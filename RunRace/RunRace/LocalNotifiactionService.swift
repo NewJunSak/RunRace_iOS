@@ -7,6 +7,13 @@
 
 import UserNotifications
 
+protocol NotificationServable {
+    func requestPermission()
+    func scheduleNotification()
+    func cancelNotification()
+}
+
+//TODO: DataTransferService에서 현재 매치가 진행중인지 Bool Subject로 처리 필요
 final class LocalNotifiactionService {
     private let unNotificationService = UNUserNotificationCenter.current()
     
