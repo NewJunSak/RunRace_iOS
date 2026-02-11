@@ -40,7 +40,6 @@ extension DataTransferService {
             .eraseToAnyPublisher()
     }
     
-    
     func setMatch(_ match: GKMatch) {
         self.match = match
     }
@@ -49,6 +48,10 @@ extension DataTransferService {
         let runningData = toRunningData(from: status)
         let data = try JSONEncoder().encode(runningData)
         try match?.sendData(toAllPlayers: data, with: .unreliable)
+    }
+    
+    func endMatch() {
+        match = nil
     }
 }
 
