@@ -1,5 +1,5 @@
 //
-//  LocalNotifiactionService.swift
+//  LocalNotificationService.swift
 //  RunRace
 //
 //  Created by BOMBSGIE on 2/11/26.
@@ -14,7 +14,7 @@ protocol NotificationServable {
 }
 
 //TODO: DataTransferService에서 현재 매치가 진행중인지 Bool Subject로 처리 필요
-final class LocalNotifiactionService {
+final class LocalNotificationService {
     private let unNotificationService = UNUserNotificationCenter.current()
     
     private func configureContent() -> UNMutableNotificationContent {
@@ -25,7 +25,7 @@ final class LocalNotifiactionService {
     }
 }
 
-extension LocalNotifiactionService: NotificationServable {
+extension LocalNotificationService: NotificationServable {
     func requestPermission() {
         unNotificationService.requestAuthorization(options: [.alert, .sound]) { _, error in
             if let error = error {
@@ -46,7 +46,7 @@ extension LocalNotifiactionService: NotificationServable {
     }
 }
 
-private extension LocalNotifiactionService {
+private extension LocalNotificationService {
     enum Constants {
         case notificationId
         case title
