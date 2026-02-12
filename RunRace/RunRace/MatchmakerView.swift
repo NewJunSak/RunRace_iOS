@@ -9,10 +9,9 @@ import SwiftUI
 import GameKit
 
 struct MatchmakerView: UIViewControllerRepresentable {
-    @Binding var isPresented: Bool
+    @Binding var matchMode: MatchmakerMode?
     
     private let onMatchFound: (GKMatch?) -> Void
-    private let matchMode: MatchmakerMode
     
     func makeUIViewController(context: Context) -> GKMatchmakerViewController {
         var matchMakerViewController: GKMatchmakerViewController?
@@ -22,11 +21,13 @@ struct MatchmakerView: UIViewControllerRepresentable {
             matchMakerViewController = GKMatchmakerViewController(invite: invite)
         case .request(let request):
             matchMakerViewController = GKMatchmakerViewController(matchRequest: request)
+        case .none:
+            return GKMatchmakerViewController()
         }
         
         guard let matchMakerViewController else { return GKMatchmakerViewController() }
-        
         matchMakerViewController.matchmakerDelegate = context.coordinator
+        
         return matchMakerViewController
     }
     
