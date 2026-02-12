@@ -50,13 +50,22 @@ extension MatchmakerView {
         
         // GKMatchmakerViewController의 시작 버튼이 눌렸을 때 호출되는 메소드
         func matchmakerViewController(_ viewController: GKMatchmakerViewController, didFind match: GKMatch) {
+            viewController.dismiss(animated: true) { [weak self] in
+                self?.parent.matchMode = nil
+                self?.parent.onMatchFound(match)
+            }
         }
         
         func matchmakerViewControllerWasCancelled(_ viewController: GKMatchmakerViewController) {
+            viewController.dismiss(animated: true) { [weak self] in
+                self?.parent.matchMode = nil
+                self?.parent.onMatchFound(nil)
+            }
         }
         
         func matchmakerViewController(_ viewController: GKMatchmakerViewController, didFailWithError error: any Error) {
-            
+            parent.matchMode = nil
+            parent.onMatchFound(nil)
         }
     }
 }
