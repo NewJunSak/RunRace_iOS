@@ -13,7 +13,7 @@ protocol MatchmakerServable {
     func makeRequest(_ max: Int)
 }
 
-final class MatchmakerService {
+final class MatchmakerService: NSObject {
     private let modeSubject = PassthroughSubject<MatchmakerMode, Never>()
     
     
@@ -33,5 +33,11 @@ extension MatchmakerService: MatchmakerServable {
     func makeRequest(_ max: Int) {
         let request = configRequest(max)
         modeSubject.send(.request(request))
+    }
+}
+
+extension MatchmakerService: GKLocalPlayerListener {
+    func player(_ player: GKPlayer, didAccept invite: GKInvite) {
+        modeSubject.send(.invite(invite))
     }
 }
