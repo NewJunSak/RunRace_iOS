@@ -27,6 +27,21 @@ extension RunStatus {
         }
     }
     
+    var time: Date? {
+        switch self {
+        case .countDown:
+            nil
+        case .started(let point, let time):
+            time
+        case .running(let point):
+            nil
+        case .finished(let point, let time):
+            time
+        case .giveUp:
+            nil
+        }
+    }
+    
     var isRunning: Bool {
         switch self {
         case .started, .running:
