@@ -23,8 +23,8 @@ struct RunStatusCoder {
         decoder.dateDecodingStrategy = .millisecondsSince1970
     }
     
-    func encode(_ status: RunStatus, userId: String) throws -> Data {
-        let dto = RunStatusDTO(userId: userId, runStatus: status)
+    func encode(_ status: RunStatus) throws -> Data {
+        let dto = RunStatusDTO(runStatus: status)
         return try encoder.encode(dto)
     }
     

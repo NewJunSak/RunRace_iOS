@@ -8,14 +8,12 @@
 import Foundation
 
 struct RunStatusDTO: Codable {
-    let userId: String
     let status: StatusType
     let time: Date?
     let latitude: Double?
     let longitude: Double?
     
-    init(userId: String, runStatus: RunStatus) {
-        self.userId = userId
+    init(runStatus: RunStatus) {
         self.status = StatusType(from: runStatus)
         self.latitude = runStatus.point?.latitude
         self.longitude = runStatus.point?.longitude
@@ -82,11 +80,5 @@ extension RunStatusDTO {
         case .giveUp:
             return .giveUp
         }
-    }
-}
-
-private extension RunStatusDTO {
-    enum CodingKeys: String, CodingKey {
-        case userId, status, time, latitude, longitude
     }
 }
