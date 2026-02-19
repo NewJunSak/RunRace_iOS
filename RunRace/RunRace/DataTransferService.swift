@@ -11,6 +11,7 @@ import GameKit
 
 final class DataTransferService: NSObject {
     private let outputDataSubject = PassthroughSubject<(userId: String, Data), Never>()
+    private let runStatusCoder = RunStatusCoder()
     
     private var match: GKMatch? {
         didSet {
@@ -29,13 +30,10 @@ extension DataTransferService: GKMatchDelegate {
 extension DataTransferService {
     var outputRunStatusPublisher: AnyPublisher<(userId: String, RunStatus), Error> {
         outputDataSubject
-            .tryMap { (userId, data) in
-                let runningData = try JSONDecoder().decode(RunningData.self, from: data)
-                return (userId, runningData)
-            }
-            .compactMap{ [weak self] id, data in
-                guard let runStatus = self?.toRunStatus(from: data) else { return nil }
-                return (id, runStatus)
+            .tryMap { [weak self] (userId, data) in
+                guard let self = self else { throw URLError(.cannotDecodeContentData) }
+                let status = try self.runStatusCoder.decode(data)
+                return (userId, status)
             }
             .eraseToAnyPublisher()
     }
@@ -45,8 +43,7 @@ extension DataTransferService {
     }
     
     func sendData(with status: RunStatus) throws {
-        let runningData = toRunningData(from: status)
-        let data = try JSONEncoder().encode(runningData)
+        let data = try runStatusCoder.encode(status)
         try match?.sendData(toAllPlayers: data, with: .unreliable)
     }
     
@@ -55,47 +52,3 @@ extension DataTransferService {
     }
 }
 
-
-// MARK: - Transfer Method
-
-private extension DataTransferService {
-    
-    func toRunStatus(from runningData: RunningData) -> RunStatus? {
-        if runningData.runState == .countDown { return .countDown }
-        if runningData.runState == .giveUp { return .giveUp }
-        guard let latitude = runningData.latitude,
-              let longitude = runningData.longitude,
-              let timestamp = runningData.timestamp
-        else {
-            return nil
-        }
-        
-        let point = Point(latitude: latitude, longitude: longitude)
-        
-        switch runningData.runState {
-        case .started:
-            return .started(point: point, time: timestamp)
-        case .running:
-            return .running(point: point)
-        case .finished:
-            return .finished(point: point, time: timestamp)
-        default:
-            return nil
-        }
-    }
-    
-    func toRunningData(from status: RunStatus) -> RunningData {
-        switch status {
-        case .countDown:
-            return RunningData(runState: .countDown)
-        case .started(let point, let time):
-            return RunningData(runState: .started, latitude: point.latitude, longitude: point.longitude, timestamp: time)
-        case .running(let point):
-            return RunningData(runState: .running, latitude: point.latitude, longitude: point.longitude)
-        case .finished(let point, let time):
-            return RunningData(runState: .finished, latitude: point.latitude, longitude: point.longitude, timestamp: time)
-        case .giveUp:
-            return RunningData(runState: .giveUp)
-        }
-    }
-}
