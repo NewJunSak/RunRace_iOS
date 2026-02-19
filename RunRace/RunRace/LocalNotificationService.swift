@@ -12,7 +12,7 @@ protocol NotificationServable {
     var errorPublisher: AnyPublisher<AppErrorProtocol, Never> { get }
     
     func requestPermission()
-    func scheduleNotification()
+    func scheduleNotification(_ body: String)
     func cancelNotification()
 }
 
@@ -21,10 +21,10 @@ final class LocalNotificationService {
     private let unNotificationService = UNUserNotificationCenter.current()
     private let errorSubject = PassthroughSubject<AppErrorProtocol, Never>()
     
-    private func configureContent() -> UNMutableNotificationContent {
+    private func configureContent(_ body: String) -> UNMutableNotificationContent {
         let content = UNMutableNotificationContent()
         content.title = Constants.title.value
-        content.body = Constants.body.value
+        content.body = body
         return content
     }
 }
@@ -47,8 +47,8 @@ extension LocalNotificationService: NotificationServable {
         }
     }
     
-    func scheduleNotification() {
-        let content = configureContent()
+    func scheduleNotification(_ body: String) {
+        let content = configureContent(body)
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
         let request = UNNotificationRequest(identifier: Constants.notificationId.value, content: content, trigger: trigger)
         unNotificationService.add(request)
@@ -85,7 +85,6 @@ private extension LocalNotificationService {
     enum Constants {
         case notificationId
         case title
-        case body
         
         var value: String {
             switch self {
@@ -93,8 +92,6 @@ private extension LocalNotificationService {
                 return "disconnectWarning"
             case .title:
                 return "게임이 진행 중입니다."
-            case .body:
-                return "연결이 끊어질 수 있으니, 탭하여 게임으로 돌아오세요."
             }
         }
     }
