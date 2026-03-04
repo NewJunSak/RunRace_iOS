@@ -39,4 +39,8 @@ actor RunningSession {
     func reset() {
         runnerMap.removeAll()
     }
+    
+    func fetchRunner(id: String) -> Runner? {
+        return runnerMap[id]
+    }
 }
