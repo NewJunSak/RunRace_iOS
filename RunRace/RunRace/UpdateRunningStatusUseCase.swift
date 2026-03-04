@@ -63,6 +63,7 @@ extension UpdateRunningStatusUseCase {
                     case .finished, .giveUp:
                         pointService.stopUpdatingPoint()
                         task?.cancel()
+                        return
                     }
                     //runner가 클래스라 자체에서 업데이트 하도록 하긴 했는데, runningSession으로 접근해서 업데이트하는 것이 좋은지 고민
                     runner.update(status: status)
