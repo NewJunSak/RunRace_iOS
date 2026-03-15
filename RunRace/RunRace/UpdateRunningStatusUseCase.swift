@@ -26,6 +26,17 @@ final class UpdateRunningStatusUseCase {
         self.runningSession = runningSession
     }
     
+    deinit {
+        endMatch()
+    }
+    
+    private func endMatch() {
+        pointService.stopUpdatingPoint()
+        dataTransferService.endMatch()
+        Task {
+            await runningSession.reset()
+        }
+    }
 }
 
 // MARK: - Combine
