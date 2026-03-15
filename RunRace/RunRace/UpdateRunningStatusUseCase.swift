@@ -17,6 +17,7 @@ final class UpdateRunningStatusUseCase {
     private let runningTimeSubject = CurrentValueSubject<TimeInterval, Never>(0.0)
     
     private var countDownCancellable: AnyCancellable?
+    private var runningTimeCancllable: AnyCancellable?
     
     // 임시의 최종 달릴 거리
     private let limitDistance = 100.0
@@ -43,6 +44,9 @@ final class UpdateRunningStatusUseCase {
     private func endMatch() {
         pointService.stopUpdatingPoint()
         dataTransferService.endMatch()
+        countDownCancellable = nil
+        runningTimeCancllable = nil
+        
         Task {
             await runningSession.reset()
         }
@@ -62,8 +66,24 @@ final class UpdateRunningStatusUseCase {
                     self.countDownSubject.send(time)
                 } else {
                     self.countDownSubject.send(0)
-                    self.countDownCancellable = nil
+                    self.startRunningTimer()
+                    self.countDownCancellable?.cancel()
                 }
+            }
+    }
+    
+    private func startRunningTimer() {
+        startTime = Date()
+        pointService.startUpdatingPoint()
+        
+        runningTimeCancllable = Timer.publish(every: 1.0, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] currentDate in
+                guard let self,
+                      let startTime
+                else { return }
+                let elapsedTime = currentDate.timeIntervalSince(startTime)
+                self.runningTimeSubject.send(elapsedTime)
             }
     }
 }
@@ -75,7 +95,8 @@ extension UpdateRunningStatusUseCase {
         pointService.pointPublisher
            .tryAsyncMap { [weak self] point -> RunStatus? in
                guard let self,
-                     let runner = await self.runningSession.fetchRunner(id: "temp")
+                     let runner = await self.runningSession.fetchRunner(id: "temp"),
+                     let startTime
                else {
                    return nil
                }
@@ -84,7 +105,7 @@ extension UpdateRunningStatusUseCase {
                
                switch runner.status {
                case .countDown:
-                   status = .started(point: point, time: Date())
+                   status = .started(point: point, time: startTime)
                case .started:
                    status = .running(point: point)
                case .running:
@@ -92,6 +113,8 @@ extension UpdateRunningStatusUseCase {
                        status = .running(point: point)
                    } else {
                        status = .finished(point: point, time: Date())
+                       // 타이머 구독 종료
+                       self.runningTimeCancllable?.cancel()
                    }
                case .finished, .giveUp:
                    return runner.status
