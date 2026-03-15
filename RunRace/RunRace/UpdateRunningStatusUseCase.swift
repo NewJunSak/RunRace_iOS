@@ -13,8 +13,14 @@ final class UpdateRunningStatusUseCase {
     private let dataTransferService: DataTransferService
     private let runningSession: RunningSession
     
+    private let countDownSubject = PassthroughSubject<Double, Never>()
+    private let runningTimeSubject = CurrentValueSubject<TimeInterval, Never>(0.0)
+    
+    private var countDownCancellable: AnyCancellable?
+    
     // 임시의 최종 달릴 거리
     private let limitDistance = 100.0
+    private var startTime: Date?
     
     init(
         pointService: PointServable,
@@ -30,12 +36,35 @@ final class UpdateRunningStatusUseCase {
         endMatch()
     }
     
+    func startRunning() {
+        startCountDown()
+    }
+    
     private func endMatch() {
         pointService.stopUpdatingPoint()
         dataTransferService.endMatch()
         Task {
             await runningSession.reset()
         }
+    }
+    
+    private func startCountDown() {
+        var time = 5.0
+        countDownSubject.send(time)
+        
+        countDownCancellable = Timer.publish(every: 1.0, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in
+                guard let self else { return }
+                time -= 1
+                
+                if time > 0 {
+                    self.countDownSubject.send(time)
+                } else {
+                    self.countDownSubject.send(0)
+                    self.countDownCancellable = nil
+                }
+            }
     }
 }
 
@@ -73,6 +102,14 @@ extension UpdateRunningStatusUseCase {
                return status
            }
            .eraseToAnyPublisher()
+    }
+    
+    var countDownPublisher: AnyPublisher<Double, Never> {
+        countDownSubject.eraseToAnyPublisher()
+    }
+    
+    var runningTimePublisher: AnyPublisher<TimeInterval, Never> {
+        runningTimeSubject.eraseToAnyPublisher()
     }
 }
 
